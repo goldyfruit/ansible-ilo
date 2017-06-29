@@ -1,0 +1,73 @@
+---
+# file: roles/ilo/tasks/bios.yml
+- name: Get iLO firmware version
+  uri:
+    url: "https://{{ item }}/rest/v1/managers/1"
+    method: GET
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  with_items: "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+  register: ilo_version
+
+- set_fact:
+    ilo_firmware: "{{ item.json.Firmware.Current.VersionString.split(' v')[-1] | replace('.', '') }}"
+  with_items: "{{ ilo_version.results }}"
+  no_log: true
+
+- name: Set legacy BIOS mode
+  uri:
+    url: "https://{{ item }}/rest/v1/systems/1/bios/settings"
+    method: PATCH
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body: '{"BootMode": "{{ ilo_bios_mode }}"}'
+    body_format: json
+    status_code: 200
+  with_items: "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+
+- name: Set power profile
+  uri:
+    url: "https://{{ item }}/rest/v1/systems/1/bios/settings"
+    method: PATCH
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body: '{"EnergyPerfBias": "{{ ilo_bios_power_profile }}"}'
+    body_format: json
+  with_items: "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+
+- name: Enable PXE boot on given interfaces
+  uri:
+    url: "https://{{ item.0 }}/rest/v1/systems/1/bios/settings"
+    method: PATCH
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body: '{"{{ item.1 }}": "NetworkBoot"}'
+    body_format: json
+  with_nested:
+    - "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+    - "{{ ilo_pxe_boot_enable }}"
+  when: (ilo_firmware >= '250')
+
+- name: Disable PXE boot on given interfaces
+  uri:
+    url: "https://{{ item.0 }}/rest/v1/systems/1/bios/settings"
+    method: PATCH
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body: '{"{{ item.1 }}": "Disabled"}'
+    body_format: json
+  with_nested:
+    - "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+    - "{{ ilo_pxe_boot_disable }}"
+  when: (ilo_firmware >= '250')

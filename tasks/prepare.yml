@@ -1,0 +1,18 @@
+---
+# file: roles/ilo/tasks/prepare.yml
+- name: Creating {{ ilo_macs_directory }} directory
+  file:
+    path: "{{ ilo_macs_directory }}"
+    state: directory
+
+- name: Installing needed packages
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ ilo_packages }}"
+
+- name: Installing needed Python libraries
+  pip:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ ilo_pip_packages }}"

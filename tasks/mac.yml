@@ -1,0 +1,22 @@
+---
+# file: roles/ilo/tasks/mac.yml
+- name: Collecting MAC addresses
+  uri:
+    url: "https://{{ item }}/rest/v1/systems/1/networkadapters/{{ ilo_network_adapter }}"
+    method: GET
+    user: "{{ ilo_user }}"
+    password: "{{ ilo_password }}"
+    force_basic_auth: true
+    validate_certs: false
+  with_items: "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+  when: (ilo_firmware >= '250')
+  register: macs
+
+- name: Generating {{ ilo_mac_file }} file
+  template:
+    src: opt/ci/bifrost/mac.j2
+    dest: "/opt/ci/bifrost/macs/{{ item.1 }}.txt"
+  with_together:
+    - "{{ macs.results }}"
+    - "{{ ilo_addr.results | map(attribute='ansible_facts.ipmi') | list }}"
+  when: (ilo_firmware >= '250')
