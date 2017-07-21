@@ -41,7 +41,7 @@
   tags: [ ilo, ilo-bios, ilo-mac, ilo-firmware, ilo-power ]
 
 - include: prepare.yml
-  tags: [ ilo, ilo-prepare ]
+  tags: [ ilo, ilo-prepare, ilo-mac ]
 
 - include: collect.yml
   tags: [ ilo, ilo-collect, ilo-ilo ]
