@@ -1,7 +1,0 @@
-# {{ ansible_managed }}
-iLO address: {{ item.1 }}
-  - Slot: {{ ilo_network_adapter }}
-  - MAC:
-{% for port in item.0.json.PhysicalPorts %}
-      {{ loop.index }}. {{ port.MacAddress | lower }} - {{ port.MacAddress | hwaddr('cisco') }}
-{% endfor %}
