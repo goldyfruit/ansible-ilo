@@ -1,7 +1,0 @@
----
-# file: roles/ilo/vars/Debian.yml
-ilo_packages:
-  - ipmitool
-  - freeipmi-tools
-  - sshpass
-  - jq
